@@ -27,14 +27,54 @@ public class ServerController {
     @PostMapping(value = Routes.AS_CAST_ADD_NODE,
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.TEXT_HTML_VALUE)
-    public ResponseEntity<String> addNeighbors(@RequestBody String newNeighbor) throws IOException {
+    public ResponseEntity<String> addNeighbor(@RequestBody String newNeighbor) throws IOException {
         // JSON conversion to object
         ServerService convertedServer = JSONUtils.covertFromJsonToObject(newNeighbor, ServerService.class);
         // Update the neighbors list
-        this.serverService.getNeighbors().add(convertedServer);
+        this.serverService.getNeighbors().put(convertedServer.getServerID(), convertedServer);
         System.out.println("LIST OF NEIGHBORS FOR SERVER : " + this.serverService.getServerID());
         System.out.println(this.serverService.getNeighbors());
         return new ResponseEntity<String>("NEW NEIGHBOR ADDED SUCCESSFULLY FOR SERVER : " + this.serverService.getServerID() + "\n",
+                HttpStatus.CREATED);
+    }
+
+    @PostMapping(value = Routes.AS_CAST_DEL_NODE,
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.TEXT_HTML_VALUE)
+    public ResponseEntity<String> removeNeighbor(@RequestBody String ripNeighborID) throws IOException {
+        // JSON conversion to object
+        Integer convertedServerID = JSONUtils.covertFromJsonToObject(ripNeighborID, Integer.class);
+        // Update the neighbors list
+        this.serverService.getNeighbors().remove(convertedServerID);
+        System.out.println("LIST OF NEIGHBORS FOR SERVER : " + this.serverService.getServerID());
+        System.out.println(this.serverService.getNeighbors());
+        return new ResponseEntity<String>("NEIGHBOR REMOVED SUCCESSFULLY FOR SERVER : " + this.serverService.getServerID() + "\n",
+                HttpStatus.CREATED);
+    }
+
+    @PostMapping(value = Routes.AS_CAST_ON_EDGE_UP,
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.TEXT_HTML_VALUE)
+    public ResponseEntity<String> onEdgeUp(@RequestBody String newNeighbor) throws Exception {
+        // JSON conversion to object
+        ServerService convertedServer = JSONUtils.covertFromJsonToObject(newNeighbor, ServerService.class);
+        // Update the neighbors list
+        this.serverService.onEdgeUp(convertedServer);
+        System.out.println("SOURCE AFTER onEdgeUp FOR SERVER " + this.serverService.getServerID() + "\n");
+        System.out.println(this.serverService.getBest());
+        return new ResponseEntity<String>("ON EDGE UP SENT SUCCESSFULLY FOR SERVER : " + this.serverService.getServerID() + "\n",
+                HttpStatus.CREATED);
+    }
+
+    @PostMapping(value = Routes.AS_CAST_ON_EDGE_DOWN,
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.TEXT_HTML_VALUE)
+    public ResponseEntity<String> onEdgeDown(@RequestBody String ripNeighbor) throws Exception {
+        // JSON conversion to object
+        ServerService convertedServer = JSONUtils.covertFromJsonToObject(ripNeighbor, ServerService.class);
+        // Update the neighbors list
+        this.serverService.onEdgeDown(convertedServer);
+        return new ResponseEntity<String>("ON EDGE DOWN SENT SUCCESSFULLY FOR SERVER : " + this.serverService.getServerID() + "\n",
                 HttpStatus.CREATED);
     }
 
@@ -52,19 +92,12 @@ public class ServerController {
                 HttpStatus.CREATED);
     }
 
-    @PostMapping(value = Routes.AS_CAST_DEL_NODE,
-            consumes = MediaType.APPLICATION_JSON_VALUE,
-            produces = MediaType.TEXT_HTML_VALUE)
-    public void removeNeighbors() {
-
-    }
-
     @PostMapping(value = Routes.AS_CAST_ADD,
             produces = MediaType.TEXT_HTML_VALUE)
     public ResponseEntity<String> add() throws Exception {
         serverService.add();
         System.out.println("SOURCE FOR SERVER : " + this.serverService.getServerID());
-        System.out.println(serverService.getBest());
+        System.out.println(this.serverService.getBest());
         return new ResponseEntity<String>("Add OPERATION RECEIVED BY SERVER : " + this.serverService.getServerID() + "\n",
                 HttpStatus.CREATED);
     }

@@ -8,4 +8,6 @@ public abstract class Routes {
     public static final String AS_CAST_UPDATE_WEIGHTS = "/update_weights";
     public static final String AS_CAST_DEL_NODE = "/del_node";
     public static final String AS_CAST_ADD_NODE = "/add_node";
+    public static final String AS_CAST_ON_EDGE_UP = "/on_edge_up";
+    public static final String AS_CAST_ON_EDGE_DOWN = "/_on_edge_down";
 }

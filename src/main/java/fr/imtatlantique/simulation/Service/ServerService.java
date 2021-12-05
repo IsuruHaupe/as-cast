@@ -1,11 +1,14 @@
 package fr.imtatlantique.simulation.Service;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import fr.imtatlantique.simulation.Configuration.Routes;
 import fr.imtatlantique.simulation.Structures.*;
 import fr.imtatlantique.simulation.Utils.JSONUtils;
+import fr.imtatlantique.simulation.Utils.ServerDeserializer;
+import fr.imtatlantique.simulation.Utils.ServerSerializer;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,9 +16,7 @@ import org.springframework.stereotype.Component;
 
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 @Getter
@@ -25,7 +26,9 @@ import java.util.concurrent.CompletableFuture;
 public class ServerService {
     @Value("${serverId}") // see application.properties
     private Integer serverID;
-    private List<ServerService> neighbors;
+    //@JsonDeserialize(keyUsing = ServerDeserializer.class)
+    //@JsonSerialize(keyUsing = ServerSerializer.class)
+    private Map<Integer, ServerService> neighbors;
     private int counter;
     private Versions versions;
     private MAdd best;
@@ -34,7 +37,7 @@ public class ServerService {
     private Weights weights;
 
 
-    public ServerService(int serverID, List<ServerService> neighbors, int counter, MAdd best, MonitorMessages monitor, String serviceURL, Weights weights) {
+    public ServerService(int serverID, Map<Integer, ServerService> neighbors, int counter, MAdd best, MonitorMessages monitor, String serviceURL, Weights weights) {
         this.serverID = serverID;
         this.neighbors = neighbors;
         this.counter = counter;
@@ -45,7 +48,7 @@ public class ServerService {
     }
 
     public ServerService() {
-        this.neighbors = new ArrayList<>();
+        this.neighbors = new HashMap<>();
         this.counter = 0;
         this.versions = new Versions();
         this.monitor = new MonitorMessages();
@@ -56,7 +59,7 @@ public class ServerService {
 
     public ServerService(int pid) {
         this.serverID = pid;
-        this.neighbors = new ArrayList<>();
+        this.neighbors = new HashMap<>();
         this.counter = 0;
         this.versions = new Versions();
         this.monitor = new MonitorMessages();
@@ -85,15 +88,15 @@ public class ServerService {
             // #B better partition detected
             this.versions.update(m.getIdentifier());
             this.best = m;
-            for (ServerService s : this.neighbors) {
-                MAdd f = m.fwd(this, this.weights.get(this.serverID, s.getServerID()));
+            for (Map.Entry<Integer, ServerService> s : this.neighbors.entrySet()) {
+                MAdd f = m.fwd(this, this.weights.get(this.serverID, s.getValue().getServerID()));
                 // create payload
                 PayloadMAdd payload = new PayloadMAdd(this, f);
                 // convert to JSON
                 ObjectMapper objectMapper = new ObjectMapper();
                 String inputJson = JSONUtils.covertFromObjectToJson(payload);
                 //create a new http service
-                HttpService httpService = new HttpService(s.getServiceURL());
+                HttpService httpService = new HttpService(s.getValue().getServiceURL());
                 // preparation of request
                 HttpRequest request = httpService.preparePostRequest(Routes.AS_CAST_RECEIVE_ADD, inputJson);
                 // send request
@@ -115,8 +118,8 @@ public class ServerService {
             this.versions.update(m.getIdentifier());
             this.best = MAdd.NOTHING();
             // forward to everyone, for ones must delete while others must echo
-            for (ServerService s : this.neighbors) {
-                if (!q.equals(s) || m.getCancel()) { // important that cancel goes to parent as well
+            for (Map.Entry<Integer, ServerService> s : this.neighbors.entrySet()) {
+                if (!q.equals(s.getValue()) || m.getCancel()) { // important that cancel goes to parent as well
                     MDel f = m.fwd(this);
 
                     // create payload
@@ -125,7 +128,7 @@ public class ServerService {
                     ObjectMapper objectMapper = new ObjectMapper();
                     String inputJson = JSONUtils.covertFromObjectToJson(payload);
                     //create a new http service
-                    HttpService httpService = new HttpService(s.getServiceURL());
+                    HttpService httpService = new HttpService(s.getValue().getServiceURL());
                     // preparation of request
                     HttpRequest request = httpService.preparePostRequest(Routes.AS_CAST_RECEIVE_DEL, inputJson);
                     // send request
@@ -193,31 +196,12 @@ public class ServerService {
     }
 
     public void onEdgeDown(ServerService rip) throws Exception {
-        System.out.println(String.format("RIP between %s and %s.", this.getServerID(), rip.getServerID()));
+        System.out.printf("RIP between %s and %s.%n", this.getServerID(), rip.getServerID());
         if (!this.best.isNothing()) {
             if (!Objects.isNull(this.best.last()) && // not the source ourselves
-                    this.best.last().getServerID() == rip.getServerID()) {
+                    this.best.last().getServerID().equals(rip.getServerID())) {
                 MDel c = this.best.cancel();
-                System.out.println(String.format("CANCELLING %s : %s", this.getServerID(), c.toString()));
-
-                // create payload
-                PayloadMDel payload = new PayloadMDel(rip, c);
-                // convert to JSON
-                ObjectMapper objectMapper = new ObjectMapper();
-                String inputJson = JSONUtils.covertFromObjectToJson(payload);
-                //create a new http service
-                HttpService httpService = new HttpService(this.getServiceURL());
-                // preparation of request
-                HttpRequest request = httpService.preparePostRequest(Routes.AS_CAST_RECEIVE_DEL, inputJson);
-                // send request
-                try {
-                    CompletableFuture<HttpResponse<String>> response = httpService.sendPostRequest(request);
-                    System.out.println(response.get().body());
-                } catch (Exception exception) {
-                    throw new Exception("Erreur : " + exception);
-                }
-
-
+                System.out.printf("CANCELLING %s : %s%n", this.getServerID(), c.toString());
                 this.receiveDel(rip, c);
             }
         }
