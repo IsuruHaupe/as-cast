@@ -2,13 +2,9 @@ package fr.imtatlantique.simulation.Service;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import fr.imtatlantique.simulation.Configuration.Routes;
 import fr.imtatlantique.simulation.Structures.*;
 import fr.imtatlantique.simulation.Utils.JSONUtils;
-import fr.imtatlantique.simulation.Utils.ServerDeserializer;
-import fr.imtatlantique.simulation.Utils.ServerSerializer;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.beans.factory.annotation.Value;

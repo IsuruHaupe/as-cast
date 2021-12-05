@@ -22,8 +22,6 @@ import java.util.concurrent.ExecutionException;
 
 @SpringBootApplication
 public class main {
-    private static final HttpClient client = HttpClient.newBuilder().version(HttpClient.Version.HTTP_2).build();
-    private static final String serviceURL = "http://localhost:8080";
     public static void main(String[] args) throws InterruptedException, ExecutionException, IOException {
         // test serialization of data before sending http request
         /*
@@ -45,6 +43,7 @@ public class main {
         ServerController controller = context.getBean(ServerController.class);
         System.out.println("SERVER ID : " + controller.getServerService().getServerID());
 
+        /*
         // UNCOMMENT WHEN YOU HAVE THREE SERVERS RUNNING (B, C, D)
         // DON'T FORGET TO CHANGE THE 'application.properties' FILE
         // SIMULATION : READ README
@@ -74,6 +73,8 @@ public class main {
 
         Thread.sleep(2000);
         removeSource(servers.get(0));
+
+         */
 
     }
 
