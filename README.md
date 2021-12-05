@@ -41,6 +41,18 @@ the *bin* folder path to the environment variables.
 * Once this is done, execute the *main.java* to launch server A and the tests. 
 * **Be careful to change the values in *application.properties* whenever you launch a server, otherwise you will encounter
 PORT and server ID conflicts**
+* Values tested for the PORT are : 
+  * server A : 8080
+  * server B : 8081
+  * server C : 8082
+  * server D : 8083
+* Values tested for the server ID are : 
+  * server A : 1
+  * server B : 2
+  * server C : 3
+  * server D : 4
+* If you want to change them, change the test functions
+
 
 
 # Explanation 
@@ -53,9 +65,14 @@ PORT and server ID conflicts**
   * */del* : this route is used when the current server wants to remove itself as a source
   * */receive_add* : this route is used when a server wants to propagate an add message to its neighbors
   * */receive_del* : this route is used when a server wants to propagate a del message to its neighbors
+  * */on_edge_up* : this route is called after a bidirectional link is created between two node, 
+    and we need to make them compete together for the best source
+  * */on_edge_down* : this route is called after links are removed between two nodes
+
+* All the requests are POST requests.
   
 
-* A service is called whenever the controller needs to update the state of the service 
+* The controller will call the service whenever the controller routes are called and needs to update the state of the node 
   (when becoming a source or receiving new neighbors or new weights). This service implements the AS-Cast algorithm.
 
 
